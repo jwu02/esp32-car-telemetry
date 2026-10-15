@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PROTOTYPE · live dashboard</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<!-- ── status strip: always visible, every variant ─────────────────────── -->
+<header id="strip">
+  <span class="dev" id="dev">connecting…</span>
+  <span class="eng" id="eng-pill" data-engine="OFF">OFF</span>
+  <span class="clock" id="clock-chip" hidden>clock ?</span>
+  <span class="home" id="home-badge" hidden>IGNITION OFF</span>
+</header>
+
+<main id="main">
+
+  <!-- ══ A · CLUSTER — one number, glanceable while parked at a light ══ -->
+  <section class="variant" data-v="a">
+    <div class="cluster-hero">
+      <b class="hero-num" data-metric="sp">0</b><i class="hero-unit">km/h</i>
+    </div>
+    <canvas class="hero-spark" data-spark="sp" height="70"></canvas>
+    <div class="cluster-row">
+      <div><b data-metric="pwr">0</b><i>kW HV</i></div>
+      <div><b data-metric="soc">0</b><i>% SOC</i></div>
+      <div><b data-metric="rpm">0</b><i>rpm</i></div>
+    </div>
+    <p class="hint">Variant A asks: is one number plus an engine-state word the whole dashboard?</p>
+  </section>
+
+  <!-- ══ B · TILE GRID — everything at once ══ -->
+  <section class="variant" data-v="b">
+    <div class="grid">
+      <div class="card"><header>speed</header><b data-metric="sp">0</b><i>km/h</i><canvas data-spark="sp"></canvas></div>
+      <div class="card"><header>engine</header><b data-metric="rpm">0</b><i>rpm</i><canvas data-spark="rpm"></canvas></div>
+      <div class="card"><header>battery power</header><b data-metric="pwr">0</b><i>kW</i><canvas data-spark="pwr"></canvas></div>
+      <div class="card"><header>hybrid SOC</header><b data-metric="soc">0</b><i>%</i><canvas data-spark="soc"></canvas></div>
+      <div class="card"><header>HV current</header><b data-metric="hvA">0</b><i>A</i><canvas data-spark="hvA"></canvas></div>
+      <div class="card"><header>coolant</header><b data-metric="cool">0</b><i>°C</i><canvas data-spark="cool"></canvas></div>
+      <div class="card"><header>engine load</header><b data-metric="load">0</b><i>%</i><canvas data-spark="load"></canvas></div>
+      <div class="card"><header>trip</header><b data-metric="km">0</b><i>km</i><canvas data-spark="km"></canvas></div>
+    </div>
+    <p class="hint">Variant B asks: which of these eight earn their place, and which are noise?</p>
+  </section>
+
+  <!-- ══ C · TRACE — what happened over the last minute ══ -->
+  <section class="variant" data-v="c">
+    <canvas id="trace" height="200"></canvas>
+    <div class="legend"><b class="l-speed">speed</b><b class="l-rpm">rpm</b><b class="l-eng">engine on</b><b class="l-regen">regen</b></div>
+    <div class="strip-row">
+      <div><b data-metric="sp">0</b><i>km/h</i></div>
+      <div><b data-metric="rpm">0</b><i>rpm</i></div>
+      <div><b data-metric="pwr">0</b><i>kW</i></div>
+      <div><b data-metric="soc">0</b><i>%</i></div>
+      <div><b data-metric="km">0</b><i>km</i></div>
+    </div>
+    <ul class="events" id="events"></ul>
+    <p class="hint">Variant C asks: is the shape over time the point, and are the numbers just decoration?</p>
+  </section>
+
+  <!-- ══ D · LEDGER — the record, not the stream ══ -->
+  <section class="variant" data-v="d">
+    <div class="ledger-head">
+      <div><b data-metric="sp">0</b><i>km/h now</i></div>
+      <div><b data-metric="km">0</b><i>km this trip</i></div>
+      <div><b data-metric="odo">0</b><i>odometer</i></div>
+    </div>
+    <h2>On the device</h2>
+    <ul class="recs" id="recs"></ul>
+    <button class="primary" id="export-cta">Export to database…</button>
+    <p class="hint">Variant D asks: is the live view even the point, or is the export the point and live values just a heartbeat?</p>
+  </section>
+
+</main>
+
+<!-- ── the export screen ─────────────────────────────────────────────── -->
+<aside id="export" class="sheet" hidden>
+  <header>
+    <h1>Export</h1>
+    <button class="x" id="export-close">close</button>
+  </header>
+  <div id="export-body"></div>
+</aside>
+
+<!-- ── state panel (rule: surface the state) ─────────────────────────── -->
+<aside id="state" class="sheet" hidden>
+  <header>
+    <h1>State</h1>
+    <button class="x" id="state-close">close</button>
+  </header>
+  <div id="state-body"></div>
+</aside>
+
+<!-- ── floating bar ──────────────────────────────────────────────────── -->
+<nav id="bar">
+  <div class="row">
+    <span class="lbl">view</span>
+    <button data-set="v" data-val="a" class="on">A cluster</button>
+    <button data-set="v" data-val="b">B grid</button>
+    <button data-set="v" data-val="c">C trace</button>
+    <button data-set="v" data-val="d">D ledger</button>
+  </div>
+  <div class="row">
+    <span class="lbl">channel</span>
+    <button data-set="ch" data-val="sse" class="on">SSE</button>
+    <button data-set="ch" data-val="ws">WebSocket</button>
+    <button data-set="ch" data-val="poll">poll</button>
+    <span class="lbl">device rate</span>
+    <button data-set="hz" data-val="5">5</button>
+    <button data-set="hz" data-val="10" class="on">10</button>
+    <button data-set="hz" data-val="20">20</button>
+  </div>
+  <div class="row">
+    <button id="btn-ignition">ignition off</button>
+    <button id="btn-wake" hidden>wake on CAN</button>
+    <button id="export-cta2">export…</button>
+    <button id="btn-state">state</button>
+  </div>
+</nav>
+
+<script src="/app.js"></script>
+</body>
+</html>
